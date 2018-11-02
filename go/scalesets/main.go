@@ -1,10 +1,15 @@
-package main
+package azure
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
+
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
 const azureInstanceMetadataEndpoint = "http://169.254.169.254/metadata/instance"
@@ -56,12 +61,33 @@ func retrieveComputeInstanceMetadata() (metadata ComputeInstanceMetadata, err er
 	return m, nil
 }
 
+type azVirtualMachineScaleSetVMsClient struct {
+	client compute.VirtualMachineScaleSetVMsClient
+}
+
+func newAzureVirtualMachineScaleSetVmsClient(metadata *ComputeInstanceMetadata) *azVirtualMachineScaleSetVMsClient {
+	virtualMachineScaleSetVMsClient := compute.NewVirtualMachineScaleSetVMsClient(metadata.SubscriptionID)
+	authorizer, err := auth.NewAuthorizerFromEnvironment()
+	if err == nil {
+		virtualMachineScaleSetVMsClient.Authorizer = authorizer
+	}
+	return &azVirtualMachineScaleSetVMsClient{
+		client: virtualMachineScaleSetVMsClient,
+	}
+}
+
 func main() {
+	fmt.Println("Getting the status of the VM instance... ")
 	m, err := retrieveComputeInstanceMetadata()
 	if err != nil {
-		panic(fmt.Errorf("failed to retrieve instance metadata: %v", err))
+		panic(fmt.Errorf("unable to retrieve the instance metadata: %v", err))
 	}
-	fmt.Printf("Instance Name: %s", m.Name)
-	fmt.Printf("VM Scale Set Name: %s", m.VMScaleSetName)
-	fmt.Printf("Subscription ID: %s", m.SubscriptionID)
+	az := newAzureVirtualMachineScaleSetVmsClient(&m)
+	ctx, cancel := context.WithTimeout(context.Background(), 6000*time.Second)
+	defer cancel()
+	result, err := az.client.GetInstanceView(ctx, m.ResourceGroupName, m.VMScaleSetName, m.VMID)
+	if err != nil {
+		panic(fmt.Errorf("unable to get instance view from Azure Resource Manager: %v", err))
+	}
+	fmt.Printf("VM instance %s is the following: %s", m.Name, result.Status)
 }

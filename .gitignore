@@ -1,2 +1,5 @@
 .vscode/
 .DS_Store
+vendor/
+Gopkg.lock
+Gopkg.toml
