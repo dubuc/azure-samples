@@ -12,23 +12,23 @@ const azureInstanceMetadataEndpoint = "http://169.254.169.254/metadata/instance"
 // ComputeInstanceMetadata denotes the compute specific instance metadata from Azure Instance
 // Metadata Service
 type ComputeInstanceMetadata struct {
-	Location             string
-	Name                 string
-	Offer                string
-	OsType               string
-	PlacementGroupID     string
-	PlatformFaultDomain  int
-	PlatformUpdateDomain int
-	Publisher            string
-	ResourceGroupName    string
-	Sku                  string
-	SubscriptionID       string
-	Tags                 string
-	Version              string
-	VMID                 string
-	VMScaleSetName       string
-	VMSize               string
-	Zone                 int
+	Location             string `json:"location,omitempty"`
+	Name                 string `json:"name,omitempty"`
+	Offer                string `json:"offer,omitempty"`
+	OsType               string `json:"osType,omitempty"`
+	PlacementGroupID     string `json:"placement_group_id,omitempty"`
+	PlatformFaultDomain  string `json:"platformFaultDomain,omitempty"`
+	PlatformUpdateDomain string `json:"platformUpdateDomain,omitempty"`
+	Publisher            string `json:"publisher,omitempty"`
+	ResourceGroupName    string `json:"resourceGroupName,omitempty"`
+	Sku                  string `json:"sku,omitempty"`
+	SubscriptionID       string `json:"subscriptionId,omitempty"`
+	Tags                 string `json:"tags,omitempty"`
+	Version              string `json:"version,omitempty"`
+	VMID                 string `json:"vmId,omitempty"`
+	VMScaleSetName       string `json:"vmScaleSetName,omitempty"`
+	VMSize               string `json:"vmSize,omitempty"`
+	Zone                 string `json:"zone,omitempty"`
 }
 
 // Queries the Azure Instance Metadata Service for the instance's metadata
