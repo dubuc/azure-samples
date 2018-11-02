@@ -50,8 +50,7 @@ func retrieveComputeInstanceMetadata() (metadata ComputeInstanceMetadata, err er
 	if err != nil {
 		return m, fmt.Errorf("reading response body failed: %v", err)
 	}
-	fmt.Println(string(rawJSON))
-	if err := json.Unmarshal(rawJSON, m); err != nil {
+	if err := json.Unmarshal(rawJSON, &m); err != nil {
 		return m, fmt.Errorf("unmarshaling JSON response failed: %v", err)
 	}
 	return m, nil
