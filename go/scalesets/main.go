@@ -39,7 +39,7 @@ func retrieveComputeInstanceMetadata() (metadata ComputeInstanceMetadata, err er
 	req.Header.Add("Metadata", "True")
 	q := req.URL.Query()
 	q.Add("format", "json")
-	q.Add("api-version", "2017-08-01")
+	q.Add("api-version", "2017-12-01")
 	req.URL.RawQuery = q.Encode()
 	resp, err := c.Do(req)
 	if err != nil {
