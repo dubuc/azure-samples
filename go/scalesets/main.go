@@ -36,21 +36,24 @@ type ComputeInstanceMetadata struct {
 	Zone                 string `json:"zone,omitempty"`
 }
 
-// Queries the Azure Instance Metadata Service for the instance's metadata
+// Queries the Azure Instance Metadata Service for the instance's compute metadata
 func retrieveComputeInstanceMetadata() (metadata ComputeInstanceMetadata, err error) {
 	var m ComputeInstanceMetadata
 	c := &http.Client{}
+
 	req, _ := http.NewRequest("GET", azureInstanceMetadataEndpoint+"/compute", nil)
 	req.Header.Add("Metadata", "True")
 	q := req.URL.Query()
 	q.Add("format", "json")
 	q.Add("api-version", "2017-12-01")
 	req.URL.RawQuery = q.Encode()
+
 	resp, err := c.Do(req)
 	if err != nil {
 		return m, fmt.Errorf("sending Azure Instance Metadata Service request failed: %v", err)
 	}
 	defer resp.Body.Close()
+
 	rawJSON, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return m, fmt.Errorf("reading response body failed: %v", err)
@@ -58,6 +61,7 @@ func retrieveComputeInstanceMetadata() (metadata ComputeInstanceMetadata, err er
 	if err := json.Unmarshal(rawJSON, &m); err != nil {
 		return m, fmt.Errorf("unmarshaling JSON response failed: %v", err)
 	}
+
 	return m, nil
 }
 
@@ -67,10 +71,13 @@ type azVirtualMachineScaleSetVMsClient struct {
 
 func newAzureVirtualMachineScaleSetVmsClient(metadata *ComputeInstanceMetadata) *azVirtualMachineScaleSetVMsClient {
 	virtualMachineScaleSetVMsClient := compute.NewVirtualMachineScaleSetVMsClient(metadata.SubscriptionID)
+
+	// Authorizing using Managed Service Identity
 	authorizer, err := auth.NewAuthorizerFromEnvironment()
 	if err == nil {
 		virtualMachineScaleSetVMsClient.Authorizer = authorizer
 	}
+
 	return &azVirtualMachineScaleSetVMsClient{
 		client: virtualMachineScaleSetVMsClient,
 	}
@@ -83,6 +90,7 @@ func main() {
 		panic(fmt.Errorf("unable to retrieve the instance metadata: %v", err))
 	}
 
+	// Getting the VMs inside the ScaleSet
 	az := newAzureVirtualMachineScaleSetVmsClient(&m)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -91,6 +99,7 @@ func main() {
 		panic(fmt.Errorf("unable to list virtual machines inside the scale set: %v", err))
 	}
 
+	// Printing the ProvisioningState and PowerState of the machine
 	for _, vm := range list.Values() {
 		if *vm.Name == m.Name {
 			view, err := az.client.GetInstanceView(ctx, m.ResourceGroupName, m.VMScaleSetName, *vm.InstanceID)
