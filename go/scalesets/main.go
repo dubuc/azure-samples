@@ -1,4 +1,4 @@
-package azure
+package main
 
 import (
 	"context"
@@ -82,12 +82,24 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("unable to retrieve the instance metadata: %v", err))
 	}
+
 	az := newAzureVirtualMachineScaleSetVmsClient(&m)
-	ctx, cancel := context.WithTimeout(context.Background(), 6000*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	result, err := az.client.GetInstanceView(ctx, m.ResourceGroupName, m.VMScaleSetName, m.VMID)
+	list, err := az.client.List(ctx, m.ResourceGroupName, m.VMScaleSetName, "", "", "")
 	if err != nil {
-		panic(fmt.Errorf("unable to get instance view from Azure Resource Manager: %v", err))
+		panic(fmt.Errorf("unable to list virtual machines inside the scale set: %v", err))
 	}
-	fmt.Printf("VM instance %s is the following: %s", m.Name, result.Status)
+
+	for _, vm := range list.Values() {
+		if *vm.Name == m.Name {
+			view, err := az.client.GetInstanceView(ctx, m.ResourceGroupName, m.VMScaleSetName, *vm.InstanceID)
+			if err != nil {
+				panic(fmt.Errorf("unable to retrieve instance view: %v", err))
+			}
+			for _, status := range *view.Statuses {
+				fmt.Println(*status.Code)
+			}
+		}
+	}
 }
